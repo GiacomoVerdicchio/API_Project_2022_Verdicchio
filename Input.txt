@@ -1,5 +1,13 @@
+4
 ciao
 pino
 puto
 mina
+cono
 cina
++nuova_partita
+cono
+3
+cioa
+ciao
++stampa_filtrate
