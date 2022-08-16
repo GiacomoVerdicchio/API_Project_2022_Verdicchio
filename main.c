@@ -20,14 +20,12 @@ struct nodo
 };
 typedef struct nodo Node;
 
-
 struct dizionario
 {
     Node* root;
     int size;
     int k;
 };
-
 typedef struct dizionario dizionario;
 
 
@@ -35,7 +33,6 @@ typedef struct dizionario dizionario;
 #define startDic 'i'
 #define endDic 'f'
 #define filtered 's'
-#define maxComando 15
 
 int lengthWord;
 
@@ -65,8 +62,6 @@ Node* newNode(char* string, int size)
     newNode->right=NULL;
     return newNode;
 }
-
-
 Node* newNodeFiltr(char* string)
 {
     Node* newNode = malloc(sizeof(Node));
@@ -77,8 +72,6 @@ Node* newNodeFiltr(char* string)
     newNode->right=NULL;
     return newNode;
 }
-
-
 void bstInsertion(dizionario* T, Node* nodo)
 {
     Node* y = NULL;
@@ -129,7 +122,6 @@ bool isInDiz(Node *x, char* parolaF)
     else
         return isInDiz(x->right, parolaF);
 }
-
 Node* tree_minimum(Node* x)
 {
     while(x->left!=NULL)
@@ -253,8 +245,8 @@ void apprendiVinc(char* in)
             if(vincC[j]==35)
             {
                 vincC[j]=in[j];
-                //questo if perché se no va sotto 0 nel caso di caio ciaz  matcha la prima e va sotto
-                if(almeno[in[j]-offset]>0)
+                //questo if perché se no va sotto 0 nel caso di caio ciaz matcha la prima e va sotto
+                if(almeno[in[j]-offset]>0 && posAlmeno[j][in[j]-offset]==true)
                     almeno[in[j]-offset]-=1;
                 //se è l'ultima occorrenza del carattere da eliminare
                 if(almeno[in[j]-offset]==0 && esattamente[in[j]-offset])
@@ -272,8 +264,7 @@ void apprendiVinc(char* in)
                 posAlmeno[j][in[j]-offset]=true;
                 if(cont[in[j]-offset]>=almeno[in[j]-offset])
                     almeno[in[j]-offset]+=1;
-                else
-                    cont[in[j]-offset]+=1;
+                cont[in[j]-offset]+=1;
             }
         }
     }
@@ -301,7 +292,10 @@ void apprendiVinc(char* in)
 bool rispettaVincoli(char* in)
 {
     int temp;
-
+    for(int j=0; j < caratteriBuf; j++)
+    {
+        cont[j]=0;
+    }
     for(int j=0;j<lengthWord;j++)
     {
         temp=in[j]-offset;
@@ -356,7 +350,6 @@ bool rispettaVincoli(char* in)
          {
              return false;
          }
-         cont[j]=0;
     }
     return true;
 }
@@ -398,18 +391,17 @@ void scorriFiltrate(Node* x, dizionario* tree)
 
 int main() {
     FILE *file;
-    int gianni = 0;
+    int gianni = 1;
 
-    if (gianni)     file = stdin;
-    else            file = fopen("../Input.txt", "r");
+    if (gianni)
+        file = stdin;
+    else            file = fopen("Input.txt", "r");
     lengthWord = 0;
 
     if (file != NULL)
     {
         if(fscanf(file, "%d\n", &lengthWord))
-        {
-
-        }
+        { }
 
         //Inizializzazione variabili
         char *comandi= malloc(sizeof(char) * (lengthWord + 1));
@@ -472,7 +464,8 @@ int main() {
 
 
 
-        do {
+        do
+        {
             //LETTURA CARATTERI
             fscanf(file, "%c", &first);
 
@@ -492,10 +485,8 @@ int main() {
                 //INVIO PAROLA IN INPUT A FUNZIONE CONFRONTO O INSERIMENTO
                 if (insertStartB)
                 {
-                    //INSERIMETO
                     Node* newNode = insertInDict(dizio,&tempInput[0]);
-
-                    if(rispettaVincoli(&tempInput[0]) && nuovaPartitaB)
+                    if(nuovaPartitaB && rispettaVincoli(&tempInput[0]))
                     {
                         insertInTree(treeFiltered, newNode->parola);
                     }
@@ -504,19 +495,14 @@ int main() {
                     // CONFRONTO : TODO mettere apposto la isInDiz
                     if(isInDiz(dizio->root,&tempInput[0]))
                     {
-                        tentativi-=1;
                         if(strcmp(riferimento,tempInput)==0)
                         {
                             printf("ok\n");
                             nuovaPartitaB = false;
                         }
-                        else if(tentativi==0)
-                        {
-                            printf("ko\n");
-                            nuovaPartitaB = false;
-                        }
                         else
                         {
+                            tentativi-=1;
                             confronto(riferimento, &tempInput[0], bufConfCopia, out, lengthWord);
                             apprendiVinc(&tempInput[0]);
                             //TODO scorro il dizionario o l'albero delle filtrate a seconda del boolean
@@ -529,14 +515,17 @@ int main() {
                             }
                             printf("%d\n", treeFiltered->size);
 
+                            if(tentativi==0)
+                            {
+                                printf("ko\n");
+                                nuovaPartitaB = false;
+                            }
                             //restore di cont e buffer
                             for (int j = 0; j < caratteriBuf; j++) {
                                 bufConfCopia[j] = bufConf[j];
                                 cont[j] = 0;
                             }
                         }
-
-
                     }
                     else
                     {
@@ -554,13 +543,9 @@ int main() {
                         //fgets(comandi,2,file);
                         if (nuovaPartitaB == false) {
                             if(fgets(riferimento, lengthWord +1, file))
-                            {
-
-                            }
+                            { }
                             if(fscanf(file, "%d\n", &tentativi))
-                            {
-
-                            }
+                            { }
                             comandi[0] = '\0';
                             nuovaPartitaB = true;
                             insertStartB = false;
@@ -597,7 +582,7 @@ int main() {
                                 }
                             }
                         }
-                        else { printf("Errore nuova partita in nuova partita\n"); }
+                        else { printf("------Errore nuova partita in nuova partita\n"); }
                         break;
                     case startDic:
                         switch (comandi[10]) {
@@ -616,7 +601,12 @@ int main() {
                         { }
                         break;
                     case filtered:
-                        stampaRicInOrder(treeFiltered->root);
+                        //se faccio una stampa filtrate prima di apprendere constraint allora
+                        //devo stampare il dizionario e non il
+                        if(firstInsert)
+                            stampaRicInOrder(dizio->root);
+                        else
+                            stampaRicInOrder(treeFiltered->root);
                         if(fgets(comandi,3,file))
                         { }
                         break;
