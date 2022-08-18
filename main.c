@@ -2,6 +2,8 @@
 #include <malloc.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
+
 #define caratteriBuf 78
 #define offset 45
 
@@ -35,7 +37,6 @@ typedef struct dizionario dizionario;
 #define filtered 's'
 
 int lengthWord;
-
 int* bufConf;
 int* bufConfCopia;
 char* out;
@@ -372,12 +373,24 @@ void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
 {
     if(x!=NULL)
     {
+        scorriAlbero(x->left, dizio, filtrate);
+        scorriAlbero(x->right, dizio, filtrate);
         if(rispettaVincoli(&x->parola[0]))
         {
             insertInTree(filtrate, x->parola);
         }
         scorriAlbero(x->left, dizio, filtrate);
         scorriAlbero(x->right, dizio, filtrate);
+    }
+}
+
+void deleteTreeFinePartita(Node* x,dizionario* tree)
+{
+    if(x!=NULL)
+    {
+        deleteTreeFinePartita(x->left, tree);
+        deleteTreeFinePartita(x->right, tree);
+        free(x);
     }
 }
 
@@ -391,7 +404,7 @@ void scorriFiltrate(Node* x, dizionario* tree)
         if (!rispettaVincoli(&x->parola[0]))
         {
             rightX = x->right;
-            free(delete(tree, x));
+                free(delete(tree, x));
             tree->size--;
             scorriFiltrate(rightX, tree);
         }
@@ -403,12 +416,35 @@ void scorriFiltrate(Node* x, dizionario* tree)
 }
 
 
+void liberaTutto(char *comandi,char* tempInput,char *riferimento,dizionario* dizio,dizionario* treeFiltered,char *vincC,int *cont,int* almeno,bool** posSbagliata,bool* esattamente,bool* nonEsiste)
+{
+    free(comandi);
+    free(tempInput);
+    free(riferimento);
+    free(dizio);
+    free(treeFiltered);
+    free(vincC);
+    free(cont);
+    free(almeno);
+
+    for(int i=0;i<lengthWord;i++)
+    {
+        free(posSbagliata[i]);
+    }
+    free(posSbagliata);
+    free(esattamente);
+    free(nonEsiste);
+    free(bufConf);
+    free(bufConfCopia);
+    free(out);
+
+}
+
+
 int main() {
     FILE *file;
-    int gianni = 1;
 
-    if (gianni) file = stdin;
-    else  file = fopen("../Input.txt", "r");
+    file = stdin;
     lengthWord = 0;
 
     if (file != NULL)
@@ -417,28 +453,30 @@ int main() {
         { }
 
         //Inizializzazione variabili
-        char *comandi= malloc(sizeof(char) * (lengthWord + 1));
+        char *comandi= malloc(sizeof(char) * 15);
         char first;
         char *tempInput = malloc(sizeof(char) * (lengthWord + 1));
         char *riferimento = malloc(sizeof(char) * (lengthWord + 1));
         bool insertStartB = true;
         //firstInsert mi serve per capire se inserire direttamente nel tree oppure prima devo vedere se filtrarlo
         bool firstInsert=true;
+        bool beforeEveryPartita=true;
         bool nuovaPartitaB = false;
         int tentativi;
+
 
         //per Confronto: bufConf conta i caratteri e li salva sul buffer, out salva l'output da mandare
         //TODO implementazioni future:   bufCont implementato come lista (di char, occorenze, puntatore)
         bufConf= malloc(sizeof (int) * caratteriBuf);
         bufConfCopia= malloc(sizeof (int) * caratteriBuf);
-        out= malloc(sizeof (char)*lengthWord-1);
+        out= malloc(sizeof (char)*lengthWord+1);
 
         //Parte per apprendimento vincoli
         vincC= malloc(sizeof (char) * (lengthWord + 5));
         cont= malloc(sizeof (int)*caratteriBuf);
         for(int j=0;j<lengthWord;j++)
         {
-            vincC[j]=35;
+            memset(vincC,35,sizeof (char));
         }
         almeno= malloc(sizeof (int) * caratteriBuf);
         posSbagliata= malloc(sizeof (bool*) * lengthWord);
@@ -446,14 +484,11 @@ int main() {
         nonEsiste= malloc(sizeof (bool)*caratteriBuf);
 
         //inizializzazioni buffer,almeno,esattamente,nonEsiste,posSbagliata
-        for(int j=0; j < caratteriBuf; j++)
-        {
-            bufConf[j]=0;
-            almeno[j]=0;
-            esattamente[j]=false;
-            nonEsiste[j]=false;
-            cont[j]=0;
-        }
+        memset(bufConf, 0, sizeof(*bufConf));
+        memset(almeno, 0, sizeof(*almeno));
+        memset(esattamente, 0, sizeof(*esattamente));
+        memset(cont,0,sizeof (*cont));
+
         for(int j=0; j < lengthWord; j++)
         {
             posSbagliata[j]=(bool*) malloc(sizeof(bool) * caratteriBuf);
@@ -521,12 +556,10 @@ int main() {
                             //TODO scorro il dizionario o l'albero delle filtrate a seconda del boolean
                             // e stampo il numero del size dell'albero delle filtrate
                             if (firstInsert) {
-
-                                scorriAlbero(dizio->root, dizio, treeFiltered);
-                                //scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
+                                //scorriAlbero(dizio->root, dizio, treeFiltered);
+                                scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
                                 firstInsert = false;
                             } else {
-
                                 scorriFiltrate(treeFiltered->root, treeFiltered);
                             }
                             printf("%d\n", treeFiltered->size);
@@ -567,8 +600,15 @@ int main() {
                             insertStartB = false;
                             firstInsert = true;
 
+                            if(beforeEveryPartita)
+                            { beforeEveryPartita=false;
+                            }
+                            else
+                            {
+                                //EliminazioneAlberoPrecedente
+                                deleteTreeFinePartita(treeFiltered->root,treeFiltered);
+                            }
                             //Inizializzazione albero
-                            //TODO da inserire la cancellazione dell'albero (svuotare la memoria)
                             treeFiltered->root=NULL;
                             treeFiltered->k=lengthWord;
                             treeFiltered->size=0;
@@ -632,14 +672,18 @@ int main() {
             tempInput[0] = '\0';
             comandi[0] = '\0';
         } while (!feof(file));
+        deleteTreeFinePartita(dizio->root,dizio);
+
+
+        bool debug=1;
+        if(debug==1)
+            liberaTutto(comandi,tempInput,riferimento,dizio,treeFiltered,vincC,cont,almeno,posSbagliata,esattamente,nonEsiste);
     //TODO spostare il temp a prima
     }else
     {
         printf("Errore di lettura");
     }
-
-    fclose(file);
-
+    return 0;
 }
 
 typedef struct T T;
