@@ -44,7 +44,7 @@ char* out;
 char *vincC;
 int *cont;
 int* almeno;
-bool** posAlmeno;
+bool** posSbagliata;
 bool* esattamente;
 bool* nonEsiste;
 
@@ -259,7 +259,7 @@ void apprendiVinc(char* in)
         }
         else if(vincC[j]==35)
         {
-            if(out[j]=='|'  && posAlmeno[j][in[j]-offset]==false)
+            if(out[j]=='|' && posSbagliata[j][in[j] - offset] == false)
             {
                 posAlmeno[j][in[j]-offset]=true;
                 if(cont[in[j]-offset]>=almeno[in[j]-offset])
@@ -278,13 +278,18 @@ void apprendiVinc(char* in)
             if(almeno[temp]>0)
             {
                 esattamente[temp]=true;
+                almeno[temp]=buf[temp];
             }
             else
             {
                 nonEsiste[temp]=true;
             }
+            posSbagliata[j][temp]=true;
         }
+
     }
+
+
     vincC[lengthWord]='\0';
 }
 
@@ -293,33 +298,29 @@ bool rispettaVincoli(char* in)
 {
     int temp;
     for(int j=0; j < caratteriBuf; j++)
-    {
         cont[j]=0;
-    }
+
     for(int j=0;j<lengthWord;j++)
     {
         temp=in[j]-offset;
+
         //caso in cui ho c### e asdo (c non è rispettato)
-        if(vincC[j]!=35)
+        if(nonEsiste[temp])
+        {
+            return false;
+        }
+        else if(vincC[j]!=35)
         {
             if(in[j]!=vincC[j])
             {
                 return false;
             }
         }
-        else if(nonEsiste[temp])
-        {
-            return false;
-        }
         //carattere in pos sbagliata
-        else if(posAlmeno[j][temp])
+        else if(posSbagliata[j][temp])
         {
             return false;
         } //troppi caratteri
-        else if(cont[temp]>almeno[temp] && esattamente[temp])
-        {
-            return false;
-        }
         cont[temp]+=1;
     }
 
@@ -367,6 +368,19 @@ void scorriAlbero(Node* x, dizionario* dizio, dizionario* filtrate)
     }
 }
 
+void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
+{
+    if(x!=NULL)
+    {
+        if(rispettaVincoli(&x->parola[0]))
+        {
+            insertInTree(filtrate, x->parola);
+        }
+        scorriAlbero(x->left, dizio, filtrate);
+        scorriAlbero(x->right, dizio, filtrate);
+    }
+}
+
 
 void scorriFiltrate(Node* x, dizionario* tree)
 {
@@ -393,9 +407,8 @@ int main() {
     FILE *file;
     int gianni = 1;
 
-    if (gianni)
-        file = stdin;
-    else            file = fopen("Input.txt", "r");
+    if (gianni) file = stdin;
+    else  file = fopen("../Input.txt", "r");
     lengthWord = 0;
 
     if (file != NULL)
@@ -428,11 +441,11 @@ int main() {
             vincC[j]=35;
         }
         almeno= malloc(sizeof (int) * caratteriBuf);
-        posAlmeno= malloc(sizeof (bool*)*lengthWord);
+        posSbagliata= malloc(sizeof (bool*) * lengthWord);
         esattamente= malloc(sizeof (bool)*caratteriBuf);
         nonEsiste= malloc(sizeof (bool)*caratteriBuf);
 
-        //inizializzazioni buffer,almeno,esattamente,nonEsiste,posAlmeno
+        //inizializzazioni buffer,almeno,esattamente,nonEsiste,posSbagliata
         for(int j=0; j < caratteriBuf; j++)
         {
             bufConf[j]=0;
@@ -443,10 +456,10 @@ int main() {
         }
         for(int j=0; j < lengthWord; j++)
         {
-            posAlmeno[j]=(bool*) malloc(sizeof(bool)*caratteriBuf);
+            posSbagliata[j]=(bool*) malloc(sizeof(bool) * caratteriBuf);
             for(int k=0; k < caratteriBuf; k++)
             {
-                posAlmeno[j][k]=false;
+                posSbagliata[j][k]=false;
             }
         }
 
@@ -508,9 +521,12 @@ int main() {
                             //TODO scorro il dizionario o l'albero delle filtrate a seconda del boolean
                             // e stampo il numero del size dell'albero delle filtrate
                             if (firstInsert) {
+
                                 scorriAlbero(dizio->root, dizio, treeFiltered);
+                                //scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
                                 firstInsert = false;
                             } else {
+
                                 scorriFiltrate(treeFiltered->root, treeFiltered);
                             }
                             printf("%d\n", treeFiltered->size);
@@ -578,7 +594,7 @@ int main() {
                             {
                                 for(int k=0; k < caratteriBuf; k++)
                                 {
-                                    posAlmeno[j][k]=false;
+                                    posSbagliata[j][k]=false;
                                 }
                             }
                         }
