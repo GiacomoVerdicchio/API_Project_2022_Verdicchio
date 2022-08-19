@@ -165,7 +165,6 @@ Node* delete(dizionario* T, Node* nodo)
         nodo->parola=y->parola;
     return y;
 }
-
 void stampaRicInOrder(Node* x)
 {
     if(x!=NULL)
@@ -232,11 +231,7 @@ void confronto(char* rif,char* in,int* buf,char* out,int lengthWord)
     out[lengthWord]='\0';
     printf("%s\n",out);
 }
-
-
-//cont serve a contare le occorrenze di un carattere e fa da soglia per l'incremento di almeno, perché se minore aspetto
-//se maggiore allora inzio a incrementare
-void apprendiVinc(char* in)
+void apprendiVinc(char* in, int* buf)
 {
     for(int j=0;j<lengthWord;j++)
     {
@@ -293,13 +288,11 @@ void apprendiVinc(char* in)
 
     vincC[lengthWord]='\0';
 }
-
-
 bool rispettaVincoli(char* in)
 {
     int temp;
     for(int j=0; j < caratteriBuf; j++)
-        cont[j]=0;
+      cont[j]=0;
 
     for(int j=0;j<lengthWord;j++)
     {
@@ -368,7 +361,6 @@ void scorriAlbero(Node* x, dizionario* dizio, dizionario* filtrate)
         scorriAlbero(x->right, dizio, filtrate);
     }
 }
-
 void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
 {
     if(x!=NULL)
@@ -383,7 +375,6 @@ void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
         scorriAlbero(x->right, dizio, filtrate);
     }
 }
-
 void deleteTreeFinePartita(Node* x,dizionario* tree)
 {
     if(x!=NULL)
@@ -393,8 +384,6 @@ void deleteTreeFinePartita(Node* x,dizionario* tree)
         free(x);
     }
 }
-
-
 void scorriFiltrate(Node* x, dizionario* tree)
 {
     if(x!=NULL)
@@ -414,8 +403,6 @@ void scorriFiltrate(Node* x, dizionario* tree)
         }
     }
 }
-
-
 void liberaTutto(char *comandi,char* tempInput,char *riferimento,dizionario* dizio,dizionario* treeFiltered,char *vincC,int *cont,int* almeno,bool** posSbagliata,bool* esattamente,bool* nonEsiste)
 {
     free(comandi);
@@ -443,7 +430,6 @@ void liberaTutto(char *comandi,char* tempInput,char *riferimento,dizionario* diz
 
 int main() {
     FILE *file;
-
     file = stdin;
     lengthWord = 0;
 
@@ -474,28 +460,13 @@ int main() {
         //Parte per apprendimento vincoli
         vincC= malloc(sizeof (char) * (lengthWord + 5));
         cont= malloc(sizeof (int)*caratteriBuf);
-        for(int j=0;j<lengthWord;j++)
-        {
-            memset(vincC,35,sizeof (char));
-        }
         almeno= malloc(sizeof (int) * caratteriBuf);
         posSbagliata= malloc(sizeof (bool*) * lengthWord);
         esattamente= malloc(sizeof (bool)*caratteriBuf);
         nonEsiste= malloc(sizeof (bool)*caratteriBuf);
-
-        //inizializzazioni buffer,almeno,esattamente,nonEsiste,posSbagliata
-        memset(bufConf, 0, sizeof(*bufConf));
-        memset(almeno, 0, sizeof(*almeno));
-        memset(esattamente, 0, sizeof(*esattamente));
-        memset(cont,0,sizeof (*cont));
-
         for(int j=0; j < lengthWord; j++)
         {
             posSbagliata[j]=(bool*) malloc(sizeof(bool) * caratteriBuf);
-            for(int k=0; k < caratteriBuf; k++)
-            {
-                posSbagliata[j][k]=false;
-            }
         }
 
         //alberi
@@ -508,8 +479,6 @@ int main() {
         treeFiltered->root=NULL;
         treeFiltered->k=lengthWord;
         treeFiltered->size=0;
-
-
 
 
         do
@@ -538,9 +507,7 @@ int main() {
                     {
                         insertInTree(treeFiltered, newNode->parola);
                     }
-                    //Non sono sicuro del passaggio parametro (devo passare solo il puntatore alla stringa)
                 } else if (nuovaPartitaB) {
-                    // CONFRONTO : TODO mettere apposto la isInDiz
                     if(isInDiz(dizio->root,&tempInput[0]))
                     {
                         if(strcmp(riferimento,tempInput)==0)
@@ -572,7 +539,6 @@ int main() {
                             //restore di cont e buffer
                             for (int j = 0; j < caratteriBuf; j++) {
                                 bufConfCopia[j] = bufConf[j];
-                                cont[j] = 0;
                             }
                         }
                     }
@@ -604,8 +570,7 @@ int main() {
                             { beforeEveryPartita=false;
                             }
                             else
-                            {
-                                //EliminazioneAlberoPrecedente
+                            {   //Eliminazione Tree Precedente
                                 deleteTreeFinePartita(treeFiltered->root,treeFiltered);
                             }
                             //Inizializzazione albero
@@ -658,7 +623,7 @@ int main() {
                         break;
                     case filtered:
                         //se faccio una stampa filtrate prima di apprendere constraint allora
-                        //devo stampare il dizionario e non il
+                        //devo stampare il dizionario e non il tree
                         if(firstInsert)
                             stampaRicInOrder(dizio->root);
                         else
