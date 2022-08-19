@@ -183,7 +183,7 @@ void stampaRicPREOrder(Node* x)
         stampaRicPREOrder(x->right);
     }
 }
-int strCmp(char* c, char* p)
+int strCmpMia(char* c, char* p)
 {
     int j=0;
     do
@@ -365,14 +365,14 @@ void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
 {
     if(x!=NULL)
     {
-        scorriAlbero(x->left, dizio, filtrate);
-        scorriAlbero(x->right, dizio, filtrate);
+        //TODO da modificare
+        scorriAlberoGiusta(x->left, dizio, filtrate);
         if(rispettaVincoli(&x->parola[0]))
         {
             insertInTree(filtrate, x->parola);
         }
-        scorriAlbero(x->left, dizio, filtrate);
-        scorriAlbero(x->right, dizio, filtrate);
+        scorriAlberoGiusta(x->right, dizio, filtrate);
+
     }
 }
 void deleteTreeFinePartita(Node* x,dizionario* tree)
@@ -393,7 +393,8 @@ void scorriFiltrate(Node* x, dizionario* tree)
         if (!rispettaVincoli(&x->parola[0]))
         {
             rightX = x->right;
-                free(delete(tree, x));
+            Node* daTogliere=delete(tree, x);
+            free(daTogliere);
             tree->size--;
             scorriFiltrate(rightX, tree);
         }
@@ -529,8 +530,8 @@ int main() {
                             } else {
                                 scorriFiltrate(treeFiltered->root, treeFiltered);
                             }
-                            printf("%d\n", treeFiltered->size);
 
+                            printf("%d\n", treeFiltered->size);
                             if(tentativi==0)
                             {
                                 printf("ko\n");
