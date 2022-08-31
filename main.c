@@ -93,98 +93,6 @@ Node* newNodeFiltr(char* string)
     return newNode;
 }
 
-Node *rightRotate(Node *y)
-{
-    Node *x = y->left;
-    Node *T2 = x->right;
-
-    if(x->right != NULL)
-    {
-        x->right->father = y;
-    }
-
-    y->left = T2;
-    x->right = y;
-
-
-    x->father = y->father;
-    y->father = x;
-    if (x->father != NULL && strCmpMia(y->parola, x->father->parola) < 0) {
-        x->father->left = x;
-    }
-    else{
-        if (x->father != NULL)
-            x->father->right = x;
-    }
-    y = x;
-
-    y->height = max(height(y->left),height(y->right))+1;
-    x->height = max(height(x->left),height(x->right))+1;
-    return x;
-}
-
-Node *leftRotate(Node *x)
-{
-    Node *y = x->right;
-    Node *T2 = y->left;
-
-    x->right = T2;
-
-    if(y->left != NULL)
-    {
-        y->left->father = x;
-    }
-    y->left = x;
-
-    y->father = x->father;
-    x->father = y;
-
-    if (y->father != NULL && strCmpMia(x->parola, y->father->parola) < 0) {
-        y->father->left = y;
-    }
-    else{
-        if (y->father != NULL)
-            y->father->right = y;
-    }
-
-
-    x->height = max(height(x->left),height(x->right))+1;
-    y->height = max(height(y->left),height(y->right))+1;
-    return y;
-}
-
-Node* insert(Node* current, Node* toInsert)
-{
-    Node* y = NULL;
-    Node* x = T->root;
-    while(x!=NULL)
-    {
-        y = x;
-        //TODO da riscrivere la strcmp
-        if(strCmpMia(nodo->parola, x->parola) < 0)
-        {
-            x = x->left;
-        }
-        else
-        {
-            x = x->right;
-        }
-        nodo->father = y;
-    }
-    if(y==NULL)
-    {
-        T->root=nodo;
-    }
-    else if(strCmpMia(nodo->parola, y->parola) < 0)
-    {
-        y->left=nodo;
-    }
-    else
-    {
-        y->right=nodo;
-    }
-}
-
 void insertInDict(dizionario* dizio, char* stringa)
 {
     Node* node = newNode(&stringa[0], dizio->k);
@@ -193,10 +101,10 @@ void insertInDict(dizionario* dizio, char* stringa)
 void insertInTree(dizionario *tree, char *stringa)
 {
     Node* node = newNodeFiltr(stringa);
-    tree->root = insert(tree->root, node);
+    tree->root = insertAVL(tree->root, node);
     tree->size++;
 }
-//da modificare
+
 bool isInDiz(Node *x, char* parolaF)
 {
     if(x==NULL)
@@ -250,82 +158,15 @@ Node* delete(dizionario* T, Node* nodo)
         nodo->parola=y->parola;
     return y;
 }
-void stampaRicInOrder(Node* x)
+void resetCont()
 {
-    if(x!=NULL)
-    {
-        stampaRicInOrder(x->left);
-        printf("%s\n",x->parola);
-        stampaRicInOrder(x->right);
-    }
-}
-void stampaRicPREOrder(Node* x)
-{
-    if(x!=NULL)
-    {
-        printf("%s->",x->parola);
-        stampaRicPREOrder(x->left);
-        stampaRicPREOrder(x->right);
-    }
+    memset(cont,  0, sizeof(int)*caratteriBuf);
 }
 
-
-NodoLista* inserisciTestaLista(NodoLista* lista, Node* x)
-{
-    NodoLista * newNodo= malloc(sizeof (NodoLista));
-    newNodo->cont=x;
-    newNodo->next= (struct NodoLista *) lista;
-    lista=newNodo;
-    return lista;
-}
-Node* TOGLI2(NodoLista** lista)
-{
-    NodoLista *top = *lista;
-    Node *res = top->cont;
-    *lista = (NodoLista *) top->next;
-    free(top);
-    return res;
-}
-void stampaIterativaInOrder(Node *tree)
-{
-    bool fine=false;
-    NodoLista * lista= malloc(sizeof (NodoLista));
-    lista->next=NULL;
-    lista->cont=NULL;
-    Node *curr=tree;
-
-    while(!fine)
-    {
-        if(curr==NULL)
-        {
-            if(lista->cont!=NULL)
-            {
-                curr= TOGLI2(&lista);
-                printf("%s\n", curr->parola);
-                curr=curr->right;
-            }
-            else
-                fine=true;
-        }
-        else
-        {
-            lista=inserisciTestaLista(lista, curr);
-            curr=curr->left;
-        }
-    }
-    free(lista);
-}
-
-void resetCont(char* in)
-{
-    for(int j=0;j<lengthWord;j++)
-    {
-        cont[in[j]-offset]=0;
-    }
-}
 void confrontoEApprendi(char* in)
 {
     int temp;
+    resetCont();
     for(int j=0;j<lengthWord;j++)
     {
         cont[in[j]-offset]++;
@@ -397,11 +238,10 @@ void confrontoEApprendi(char* in)
     printf("%s\n",out);
     vincC[lengthWord]='\0';
 }
-
 bool rispettaVincoli(char* in)
 {
     int temp;
-    memset(cont, 0, sizeof(int) * caratteriBuf);
+    resetCont();
     for(int j=0;j<lengthWord;j++)
     {
         temp=in[j]-offset;
@@ -409,21 +249,18 @@ bool rispettaVincoli(char* in)
         //caso in cui ho c### e asdo (c non è rispettato)
         if(nonEsiste[temp])
         {
-            resetCont(in);
             return false;
         }
         else if(vincC[j]!=35)
         {
             if(in[j]!=vincC[j])
             {
-                resetCont(in);
                 return false;
             }
         }
-        //carattere in pos sbagliata
+            //carattere in pos sbagliata
         else if(posSbagliata[j][temp])
         {
-            resetCont(in);
             return false;
         } //troppi caratteri
         cont[temp]+=1;
@@ -431,14 +268,13 @@ bool rispettaVincoli(char* in)
 
     for(int j=0;j<lengthWord;j++)
     {
-        temp=in[j]-offset;
+        temp=riferimento[j]-offset;
         if(almeno[temp]>0)
         {
             if(esattamente[temp])
             {
                 if(cont[temp]!=almeno[temp])
                 {
-                    resetCont(in);
                     return false;
                 }
             }
@@ -446,29 +282,92 @@ bool rispettaVincoli(char* in)
             {
                 if(cont[temp]<almeno[temp])
                 {
-                    resetCont(in);
                     return false;
                 }
             }
         }
     }
-    resetCont(in);
     return true;
 }
 
-void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
-{
-    if(x!=NULL)
-    {
-        //TODO da modificare
-        scorriAlberoGiusta(x->left, dizio, filtrate);
-        if(rispettaVincoli(&x->parola[0]))
-        {
-            insertInTree(filtrate, x->parola);
-        }
-        scorriAlberoGiusta(x->right, dizio, filtrate);
 
+NodoLista* inserisciTestaLista(NodoLista* lista, Node* x)
+{
+    NodoLista * newNodo= malloc(sizeof (NodoLista));
+    newNodo->cont=x;
+    newNodo->next= (struct NodoLista *) lista;
+    lista=newNodo;
+    return lista;
+}
+Node* TOGLI2(NodoLista** lista)
+{
+    NodoLista *top = *lista;
+    Node *res = top->cont;
+    *lista = (NodoLista *) top->next;
+    free(top);
+    return res;
+}
+void stampaIterativaInOrder(Node *tree)
+{
+    bool fine=false;
+    NodoLista * lista= malloc(sizeof (NodoLista));
+    lista->next=NULL;
+    lista->cont=NULL;
+    Node *curr=tree;
+
+    while(!fine)
+    {
+        if(curr==NULL)
+        {
+            if(lista->cont!=NULL)
+            {
+                curr= TOGLI2(&lista);
+                printf("%s\n", curr->parola);
+                curr=curr->right;
+            }
+            else
+                fine=true;
+        }
+        else
+        {
+            lista=inserisciTestaLista(lista, curr);
+            curr=curr->left;
+        }
     }
+    free(lista);
+}
+
+void scorriAlberoGiustaIterativa(dizionario* dizio, dizionario* filtrate)
+{
+    bool fine=false;
+    NodoLista * lista= malloc(sizeof (NodoLista));
+    lista->next=NULL;
+    lista->cont=NULL;
+    Node *curr=dizio->root;
+
+    while(!fine)
+    {
+        if(curr==NULL)
+        {
+            if(lista->cont!=NULL)
+            {
+                curr= TOGLI2(&lista);
+                if(rispettaVincoli(&curr->parola[0]))
+                {
+                    insertInTree(filtrate, curr->parola);
+                }
+                curr=curr->right;
+            }
+            else
+                fine=true;
+        }
+        else
+        {
+            lista=inserisciTestaLista(lista, curr);
+            curr=curr->left;
+        }
+    }
+    free(lista);
 }
 void deleteTreeFinePartita(Node* x,dizionario* tree,bool delete)
 {
@@ -521,7 +420,6 @@ void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* tre
     free(bufConfCopia);
     free(out);
 }
-
 int main() {
     FILE *file;
     file = stdin;
@@ -625,7 +523,7 @@ int main() {
                             //TODO scorro il dizionario o l'albero delle filtrate a seconda del boolean
                             // e stampo il numero del size dell'albero delle filtrate
                             if (firstInsert) {
-                                scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
+                                scorriAlberoGiustaIterativa(dizio, treeFiltered);
                                 firstInsert = false;
                             } else {
                                 scorriFiltrateDelete(treeFiltered->root, treeFiltered);
