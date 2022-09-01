@@ -352,20 +352,6 @@ bool rispettaVincoli(char* in)
     return true;
 }
 
-
-
-void scorriAlbero(Node* x, dizionario* dizio, dizionario* filtrate)
-{
-    if(x!=NULL)
-    {
-        scorriAlbero(x->left, dizio, filtrate);
-        if(rispettaVincoli(&x->parola[0]))
-        {
-            insertInTree(filtrate, x->parola);
-        }
-        scorriAlbero(x->right, dizio, filtrate);
-    }
-}
 void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
 {
     if(x!=NULL)
@@ -521,13 +507,9 @@ int main() {
                         {
                             tentativi-=1;
                             Confronto_Apprendi(&tempInput[0]);
-                            //confronto(&tempInput[0], bufConfCopia);
-                            //apprendiVinc(&tempInput[0], bufConf);
 
                             if (firstInsert) {
-                                //scorriAlbero(dizio->root, dizio, treeFiltered);
                                 scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
-
                                 //MorrisTraversal(dizio->root,treeFiltered);
                                 firstInsert = false;
                             } else {
@@ -587,17 +569,25 @@ int main() {
                             memset(bufConf, 0, sizeof(int) * caratteriBuf);
                             memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
                             memset(vincC, 35, sizeof(char) * lengthWord);
-                            memset(cont, 0, sizeof(int) * caratteriBuf);
+                            for(int i = 0; i < caratteriBuf; i++)
+                            {
+                                bufConf[i]=0;
+                                almeno[i]=0;
+                                esattamente[i]=0;
+                                nonEsiste[i]=0;
+                            }
+                            /*
+                            memset(bufConf, 0, sizeof(int) * caratteriBuf);
                             memset(almeno, 0, sizeof(int) * caratteriBuf);
                             memset(esattamente, 0, sizeof(bool) * caratteriBuf);
                             memset(nonEsiste, 0, sizeof(bool) * caratteriBuf);
-
+                            */
                             for(int j=0;j<lengthWord;j++)
                             {
                                 vincC[j]=35;
                                 bufConf[riferimento[j] - offset ]+=1;
-                                bufConfCopia[riferimento[j] - offset]+=1;
                             }
+                            memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                             for(int j=0; j < lengthWord; j++)
                             {
                                 memset(posSbagliata[j], false, sizeof(bool) * caratteriBuf );
@@ -639,7 +629,7 @@ int main() {
         } while (!feof(file));
 
         bool debug=0;
-        if(debug==0)
+        if(debug==1)
             liberaTutto(comandi,tempInput,dizio,treeFiltered);
         //TODO spostare il temp a prima
     }else
