@@ -19,6 +19,7 @@ struct nodo
     struct nodo* father;
     struct nodo* left;
     struct nodo* right;
+    bool color;
 };
 typedef struct nodo Node;
 
@@ -81,6 +82,8 @@ Node* newNode(char* string, int size)
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
+    //TODO mod
+    newNode->color=NULL;
     return newNode;
 }
 Node* newNodeFiltr(char* string)
@@ -91,6 +94,8 @@ Node* newNodeFiltr(char* string)
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
+    //TODO mod
+    newNode->color=NULL;
     return newNode;
 }
 void bstInsertion(dizionario* T, Node* nodo)
@@ -129,16 +134,16 @@ void bstInsertion(dizionario* T, Node* nodo)
 Node* insertInDict(dizionario* dizio, char* stringa)
 {
     Node* node = newNode(&stringa[0], dizio->k);
-    bstInsertion(dizio, node);
+    //bstInsertion(dizio, node);
+    rbInsertion(dizio,node);
     return node;
 }
 
 void insertInTree(dizionario *tree, char *stringa)
 {
     Node* node = newNodeFiltr(stringa);
-    bstInsertion(tree, node);
+    rbInsertion(tree, node);
 }
-//da modificare
 bool isInDiz(Node *x, char* parolaF)
 {
     if(x==NULL)
@@ -390,6 +395,58 @@ void scorriFiltrateDelete(Node* x, dizionario* tree)
     }
 }
 
+
+void MorrisPerScorriDelete(dizionario *tree)
+{
+    Node *current, *pre, *root;
+    root=tree->root;
+    if (root == NULL)
+        return;
+
+    current = root;
+    while (current != NULL) {
+
+        if (current->left == NULL) {
+            if (!rispettaVincoli(&current->parola[0]))
+            {
+                Node* daTogliere=delete(tree, current);
+                free(daTogliere);
+                tree->size--;
+            }
+            current = current->right;
+        }
+        else {
+
+            /* Find the inorder predecessor of current */
+            pre = current->left;
+            while (pre->right != NULL
+                   && pre->right != current)
+                pre = pre->right;
+
+            /* Make current as the right child of its
+               inorder predecessor */
+            if (pre->right == NULL) {
+                pre->right = current;
+                current = current->left;
+            }
+
+                /* Revert the changes made in the 'if' part to
+                   restore the original tree i.e., fix the right
+                   child of predecessor */
+            else {
+                pre->right = NULL;
+                if (!rispettaVincoli(&current->parola[0]))
+                {
+                    Node* daTogliere=delete(tree, current);
+                    free(daTogliere);
+                    tree->size--;
+                }
+                current = current->right;
+            } /* End of if condition pre->right == NULL */
+        } /* End of if condition current->left == NULL*/
+    } /* End of while */
+}
+
 void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* treeFiltered)
 {
     free(comandi);
@@ -510,10 +567,11 @@ int main() {
 
                             if (firstInsert) {
                                 scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
-                                //MorrisTraversal(dizio->root,treeFiltered);
+                               //MorrisTraversal(dizio->root);
                                 firstInsert = false;
                             } else {
                                 scorriFiltrateDelete(treeFiltered->root, treeFiltered);
+                                //MorrisPerScorriDelete(treeFiltered);
                             }
 
                             printf("%d\n", treeFiltered->size);
