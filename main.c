@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
 //1 921 000 000
@@ -19,7 +18,7 @@ struct nodo
     struct nodo* father;
     struct nodo* left;
     struct nodo* right;
-    bool color;
+    _Bool color;
 };
 typedef struct nodo Node;
 
@@ -54,10 +53,11 @@ char *riferimento;
 char *vincC;
 int *cont;
 int* almeno;
-bool** posSbagliata;
-bool* esattamente;
-bool* nonEsiste;
-int strCmpMia(char* c, char* p)
+_Bool** posSbagliata;
+_Bool* esattamente;
+_Bool* nonEsiste;
+
+int strCmpMia(const char* c, const char* p)
 {
     int j=0;
     do
@@ -144,12 +144,12 @@ void insertInTree(dizionario *tree, char *stringa)
     Node* node = newNodeFiltr(stringa);
     rbInsertion(tree, node);
 }
-bool isInDiz(Node *x, char* parolaF)
+_Bool isInDiz(Node *x, char* parolaF)
 {
     if(x==NULL)
-        return false;
+        return 0;
     else if(strCmpMia(parolaF, x->parola) == 0)
-        return true;
+        return 1;
     if(strCmpMia(parolaF, x->parola) < 0)
         return isInDiz(x->left, parolaF);
     else
@@ -269,22 +269,22 @@ void Confronto_Apprendi(char* in)
             if(bufConfCopia[temp] > 0)
             {
                 bufConfCopia[temp]--;
-                posSbagliata[j][temp]=true;
+                posSbagliata[j][temp]=1;
                 out[j] = '|';
                 cont[temp]++;
             }
             else
             {
                 out[j] = '/';
-                posSbagliata[j][temp]=true;
+                posSbagliata[j][temp]=1;
                 if(cont[temp] > 0)
                 {
-                    esattamente[temp] = true;
+                    esattamente[temp] = 1;
                     almeno[temp]=bufConf[temp];
                 }
                 else
                 {
-                    nonEsiste[temp]=true;
+                    nonEsiste[temp]=1;
                 }
             }
         }
@@ -320,21 +320,21 @@ bool rispettaVincoli(char* in)
         temp=in[j]-offset;
 
         //caso in cui ho c### e asdo (c non è rispettato)
-        if(nonEsiste[temp])
-        {
-            return false;
-        }
-        else if(vincC[j]!=35)
+        if(vincC[j]!=35)
         {
             if(in[j]!=vincC[j])
             {
-                return false;
+                return 0;
             }
         }
-            //carattere in pos sbagliata
+        else if(nonEsiste[temp])
+        {
+            return 0;
+        }
+        //carattere in pos sbagliata
         else if(posSbagliata[j][temp])
         {
-            return false;
+            return 0;
         }
         if(almeno[refTemp]>0)
         {
@@ -354,7 +354,7 @@ bool rispettaVincoli(char* in)
             }
         }
     }
-    return true;
+    return 1;
 }
 
 void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
@@ -487,11 +487,11 @@ int main() {
         char first;
         char *tempInput = malloc(sizeof(char) * (lengthWord + 1));
         riferimento = malloc(sizeof(char) * (lengthWord + 1));
-        bool insertStartB = true;
+        _Bool insertStartB = 1;
         //firstInsert mi serve per capire se inserire direttamente nel tree oppure prima devo vedere se filtrarlo
-        bool firstInsert=true;
-        bool beforeEveryPartita=true;
-        bool nuovaPartitaB = false;
+        _Bool firstInsert=1;
+        _Bool beforeEveryPartita=1;
+        _Bool nuovaPartitaB = 0;
         int tentativi;
 
 
@@ -505,12 +505,12 @@ int main() {
         vincC= malloc(sizeof (char) * (lengthWord + 5));
         cont= malloc(sizeof (int)*caratteriBuf);
         almeno= malloc(sizeof (int) * caratteriBuf);
-        posSbagliata= malloc(sizeof (bool*) * lengthWord);
-        esattamente= malloc(sizeof (bool)*caratteriBuf);
-        nonEsiste= malloc(sizeof (bool)*caratteriBuf);
+        posSbagliata= malloc(sizeof (_Bool*) * lengthWord);
+        esattamente= malloc(sizeof (_Bool)*caratteriBuf);
+        nonEsiste= malloc(sizeof (_Bool)*caratteriBuf);
         for(int j=0; j < lengthWord; j++)
         {
-            posSbagliata[j]=(bool*) malloc(sizeof(bool) * caratteriBuf);
+            posSbagliata[j]=(_Bool*) malloc(sizeof(_Bool) * caratteriBuf);
         }
 
         //alberi
@@ -568,7 +568,7 @@ int main() {
                             if (firstInsert) {
                                 scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
                                //MorrisTraversal(dizio->root);
-                                firstInsert = false;
+                                firstInsert = 0;
                             } else {
                                 scorriFiltrateDelete(treeFiltered->root, treeFiltered);
                                 //MorrisPerScorriDelete(treeFiltered);
@@ -601,18 +601,18 @@ int main() {
                 { }
                 switch (comandi[0]) {
                     case newGame:
-                        if (nuovaPartitaB == false) {
+                        if (nuovaPartitaB == 0) {
                             if(fgets(riferimento, lengthWord +1, file))
                             { }
                             if(fscanf(file, "%d\n", &tentativi))
                             { }
                             comandi[0] = '\0';
-                            nuovaPartitaB = true;
-                            insertStartB = false;
-                            firstInsert = true;
+                            nuovaPartitaB = 1;
+                            insertStartB = 0;
+                            firstInsert = 1;
 
                             if(beforeEveryPartita)
-                            { beforeEveryPartita=false;
+                            { beforeEveryPartita=0;
                             }
                             else
                             {   //Eliminazione Tree Precedente
@@ -648,7 +648,7 @@ int main() {
                             memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                             for(int j=0; j < lengthWord; j++)
                             {
-                                memset(posSbagliata[j], false, sizeof(bool) * caratteriBuf );
+                                memset(posSbagliata[j], 0, sizeof(_Bool) * caratteriBuf );
                             }
                         }
                         else { printf("------Errore nuova partita in nuova partita\n"); }
@@ -658,12 +658,12 @@ int main() {
                             case startDic:
                                 if(fgets(comandi, 3, file))
                                 { }
-                                insertStartB = true;
+                                insertStartB = 1;
                                 break;
                             case endDic:
                                 if(fgets(comandi, 1, file))
                                 { }
-                                insertStartB = false;
+                                insertStartB = 0;
                                 break;
                         }
                         if(fgets(comandi, 2, file))
@@ -686,7 +686,7 @@ int main() {
             comandi[0] = '\0';
         } while (!feof(file));
 
-        bool debug=0;
+        _Bool debug=0;
         if(debug==1)
             liberaTutto(comandi,tempInput,dizio,treeFiltered);
         //TODO spostare il temp a prima
