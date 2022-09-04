@@ -1,17 +1,12 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-//1 921 000 000
-//0 568 000 000
-#define caratteriBuf 78
+
+//stuff per tempo
+#include <time.h>
+
+#define caratteriBuf 64
 #define offset 45
-
-
-//TODO funzione booleana che restituisce true se la parola cercata è nel dizionario;
-//TODO albero filtrate
-//TODO pensare a un modo di realizzare i constraint
-//TODO da correggere stampa filtrate
 
 struct nodo
 {
@@ -19,16 +14,11 @@ struct nodo
     struct nodo* father;
     struct nodo* left;
     struct nodo* right;
-    int height;
+    _Bool color;
 };
+
 typedef struct nodo Node;
 
-
-typedef struct nodoL NodoLista;
-struct nodoL {
-    Node* cont;
-    struct NodoLista *next;
-};
 
 struct dizionario
 {
@@ -36,6 +26,7 @@ struct dizionario
     int size;
     int k;
 };
+
 typedef struct dizionario dizionario;
 
 
@@ -54,10 +45,11 @@ char *riferimento;
 char *vincC;
 int *cont;
 int* almeno;
-bool** posSbagliata;
-bool* esattamente;
-bool* nonEsiste;
-int strCmpMia(char* c, char* p)
+_Bool** posSbagliata;
+_Bool* esattamente;
+_Bool* nonEsiste;
+
+int strCmpMia(const char* c, const char* p)
 {
     int j=0;
     do
@@ -71,164 +63,187 @@ int strCmpMia(char* c, char* p)
     return 0;
 }
 
-int max(int a, int b)
+void LeftRotate(dizionario * T,Node* x)
 {
-    return (a > b)? a : b;
+    Node* y = x->right;
+    x->right = y->left;
+
+    if(y->left!=NULL)
+        y->left->father = x;
+
+    y->father = x->father;
+
+    if(x->father == NULL)
+        T->root = y;
+
+    else if(x == x->father->left)
+        x->father->left = y;
+
+    else
+        x->father->right = y;
+
+    y->left = x;
+
+    x->father = y;
+
 }
-int height(Node *N)
+void RightRotate(dizionario * T,Node* x)
 {
-    if (N == NULL)
-        return 0;
-    return N->height;
+    Node* y = x->left;
+    x->left = y->right;
+
+    if(y->right!=NULL)
+        y->right->father = x;
+
+    y->father = x->father;
+
+    if(x->father==NULL)
+        T->root = y;
+
+    else if(x== x->father->left)
+        x->father->left = y;
+
+    else
+        x->father->right = y;
+
+    y->right = x;
+    x->father = y;
+
 }
-int getBalance(Node *N)
+void rbInsertFIXUP2(dizionario* dizio, Node* nodo)
 {
-    if (N == NULL)
-        return 0;
-    return height(N->left) - height(N->right);
-}
-Node* newNode(char* string, int size)
-{
-    Node* newNode = malloc(sizeof(Node));
-    newNode->parola= malloc(sizeof(char)*(size+1));
-    for(int j = 0; j<size; j++)
+    Node* grandparent = NULL;
+    Node* parentpt = NULL;
+
+    while (nodo!=dizio->root && (nodo->color != 0) && (nodo->father->color == 1))
     {
-        newNode->parola[j]=string[j];
+        parentpt = nodo->father;
+        grandparent = nodo->father->father;
+
+        if (parentpt == grandparent->left)
+        {
+            Node* uncle = grandparent->right;
+
+            if (uncle!=NULL && uncle->color == 1)
+            {
+                grandparent->color=1;
+                parentpt->color = 0;
+                uncle->color= 0;
+                nodo = grandparent;
+            }
+            else if (nodo == parentpt->right)
+            {
+                LeftRotate(dizio, parentpt);
+                nodo = parentpt; // CASE 2
+                parentpt=nodo->father;
+            }
+            else
+            {
+                RightRotate(dizio, grandparent);
+                _Bool t=parentpt->color;
+                parentpt->color =grandparent->color; // CASE 3, BLACK
+                grandparent->color= t;
+                nodo=parentpt;
+
+            }
+        }
+        else {
+            Node* uncle=grandparent->left;
+            if (uncle!=NULL && uncle->color==1)
+            {
+                grandparent->color = 1;
+                parentpt->color = 0; // CASE 4
+                uncle->color=0;
+                nodo = grandparent;
+            }
+            else if (nodo == parentpt->left)
+            {
+                RightRotate(dizio, parentpt);
+                nodo = parentpt; // CASE 5
+                parentpt=nodo->father;
+            }
+            else
+            {
+                LeftRotate(dizio, grandparent);
+                _Bool t=parentpt->color;
+                parentpt->color=grandparent->color;
+                grandparent->color=t;
+                nodo=parentpt;
+            }
+        }
     }
+    dizio->root->color = 0;// BLACK
+}
+void rbInsertion(dizionario* T, Node* nodo)
+{
+    Node* y = NULL;
+    Node* x = T->root;
+    while(x!=NULL)
+    {
+        y = x;
+        if(strCmpMia(nodo->parola, x->parola) < 0)
+        {
+            x = x->left;
+        }
+        else
+        {
+            x = x->right;
+        }
+        nodo->father = y;
+    }
+    if(y==NULL)
+    {
+        T->root=nodo;
+    }
+    else if(strCmpMia(nodo->parola, y->parola) < 0)
+    {
+        y->left=nodo;
+    }
+    else
+    {
+        y->right=nodo;
+    }
+    nodo->left= NULL;
+    nodo->right=NULL;
+    T->size++;
+    rbInsertFIXUP2(T, nodo);
+}
+Node* insertInDict(dizionario* dizio, char* stringa)
+{
+    int size=dizio->k;
+    char* block = malloc(sizeof(Node)+ sizeof(char)* size + 1);
+    Node* newNode = (Node*) &block[0];
+    newNode->parola= &block[sizeof(Node)];
+    strcpy(newNode->parola,stringa);
     newNode->parola[size]='\0';
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
-    newNode->height = 0;
-    return newNode;
+    newNode->color=NULL;
+    Node* nodeF=newNode;
+
+    rbInsertion(dizio,nodeF);
+    return nodeF;
 }
-Node* newNodeFiltr(char* string)
+void insertInTree(dizionario *tree, char *stringa)
 {
     Node* newNode = malloc(sizeof(Node));
-    //da verificare questo assegnamento
-    newNode->parola= string;
+    newNode->parola= stringa;
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
-    newNode->height = 0;
-    return newNode;
+    newNode->color=NULL;
+    Node* nodeF=newNode;
+
+    rbInsertion(tree, nodeF);
 }
 
-Node *rightRotate(Node *y)
-{
-    Node *x = y->left;
-    Node *T2 = x->right;
-
-    if(x->right != NULL)
-    {
-        x->right->father = y;
-    }
-
-    y->left = T2;
-    x->right = y;
-
-
-    x->father = y->father;
-    y->father = x;
-    if (x->father != NULL && strCmpMia(y->parola, x->father->parola) < 0) {
-        x->father->left = x;
-    }
-    else{
-        if (x->father != NULL)
-            x->father->right = x;
-    }
-    y = x;
-
-    y->height = max(height(y->left),height(y->right))+1;
-    x->height = max(height(x->left),height(x->right))+1;
-    return x;
-}
-Node *leftRotate(Node *x)
-{
-    Node *y = x->right;
-    Node *T2 = y->left;
-
-    x->right = T2;
-
-    if(y->left != NULL)
-    {
-        y->left->father = x;
-    }
-    y->left = x;
-
-    y->father = x->father;
-    x->father = y;
-
-    if (y->father != NULL && strCmpMia(x->parola, y->father->parola) < 0) {
-        y->father->left = y;
-    }
-    else{
-        if (y->father != NULL)
-            y->father->right = y;
-    }
-
-
-    x->height = max(height(x->left),height(x->right))+1;
-    y->height = max(height(y->left),height(y->right))+1;
-    return y;
-}
-Node* insert(Node* current, Node* toInsert)
-{
-    if (current == NULL)
-        return toInsert;
-
-    if (strCmpMia(toInsert->parola , current->parola) < 0)
-    {
-        current->left = insert(current->left, toInsert);
-        current->left->father = current;
-    }
-    else
-    {
-        current->right = insert(current->right, toInsert);
-        current->right->father = current;
-    }
-
-    current->height = max(height(current->left),height(current->right))+1;
-
-    int balance = getBalance(current);
-
-    if (balance > 1 && strCmpMia(toInsert->parola , current->left->parola) < 0 && current->left != NULL)
-        return rightRotate(current);
-    if (balance < -1 && strCmpMia(toInsert->parola, current->right->parola) > 0 && current->right != NULL)
-        return leftRotate(current);
-    if (balance > 1 && strCmpMia(toInsert->parola, current->left->parola) > 0 && current->left->right != NULL)
-    {
-        current->left =  leftRotate(current->left);
-        return rightRotate(current);
-    }
-    if (balance < -1 && strCmpMia(toInsert->parola, current->right->parola) < 0 && current->right->left != NULL)
-    {
-        current->right = rightRotate(current->right);
-        return leftRotate(current);
-    }
-    return current;
-}
-Node* insertInDict(dizionario* dizio, char* stringa)
-{
-    Node* node = newNode(&stringa[0], dizio->k);
-    dizio->root = insert(dizio->root, node);
-    dizio->size++;
-    return node;
-}
-
-void insertInTree(dizionario *tree, char *stringa)
-{
-    Node* node = newNodeFiltr(stringa);
-    tree->root = insert(tree->root, node);
-    tree->size++;
-}
-//da modificare
-bool isInDiz(Node *x, char* parolaF)
+_Bool isInDiz(Node *x, char* parolaF)
 {
     if(x==NULL)
-        return false;
+        return 0;
     else if(strCmpMia(parolaF, x->parola) == 0)
-        return true;
+        return 1;
     if(strCmpMia(parolaF, x->parola) < 0)
         return isInDiz(x->left, parolaF);
     else
@@ -264,10 +279,8 @@ Node* delete(dizionario* T, Node* nodo)
         x=y->left;
     else
         x=y->right;
-
-    if(x != NULL)
+    if(x!=NULL)
         x->father=y->father;
-
     if(y->father==NULL)
         T->root=x;
     else if(y==y->father->left)
@@ -278,167 +291,33 @@ Node* delete(dizionario* T, Node* nodo)
         nodo->parola=y->parola;
     return y;
 }
-void stampaRicInOrder(Node* x)
+
+void StampaRicInOrder(Node* node)
 {
-    if(x!=NULL)
+    if(node != NULL)
     {
-        stampaRicInOrder(x->left);
-        printf("%s\n",x->parola);
-        stampaRicInOrder(x->right);
-    }
-}
-void stampaRicPREOrder(Node* x)
-{
-    if(x!=NULL)
-    {
-        printf("%s->",x->parola);
-        stampaRicPREOrder(x->left);
-        stampaRicPREOrder(x->right);
+        StampaRicInOrder(node->left);
+        puts(node->parola);
+        StampaRicInOrder(node->right);
     }
 }
 
-
-NodoLista* inserisciTestaLista(NodoLista* lista, Node* x)
+int calcoloLettera(char c)
 {
-    NodoLista * newNodo= malloc(sizeof (NodoLista));
-    newNodo->cont=x;
-    newNodo->next= (struct NodoLista *) lista;
-    lista=newNodo;
-    return lista;
-}
-Node* TOGLI2(NodoLista** lista)
-{
-    NodoLista *top = *lista;
-    Node *res = top->cont;
-    *lista = (NodoLista *) top->next;
-    free(top);
-    return res;
-}
-void stampaIterativaInOrder(Node *tree)
-{
-    bool fine=false;
-    NodoLista * lista= malloc(sizeof (NodoLista));
-    lista->next=NULL;
-    lista->cont=NULL;
-    Node *curr=tree;
-
-    while(!fine)
-    {
-        if(curr==NULL)
-        {
-            if(lista->cont!=NULL)
-            {
-                curr= TOGLI2(&lista);
-                printf("%s\n", curr->parola);
-                curr=curr->right;
-            }
-            else
-                fine=true;
-        }
-        else
-        {
-            lista=inserisciTestaLista(lista, curr);
-            curr=curr->left;
-        }
-    }
-    free(lista);
+    if(c==45)
+        return 0;
+    else if(48<=c && c<=57)
+        return c-47;
+    else if(65<=c && c<=90)
+        return c-54;
+    else if(97<=c && c<=122)
+        return c-59;
+    else if(c==95)
+        return 37;
+    else
+        return -1;
 }
 
-void confronto(char* in,int* buf)
-{
-    //TODO    da inserire qui ( o meglio ancora prima di chiamarla) la verifica che sia ammissibile
-    // , altrimenti not exist
-    for(int j=0;j<lengthWord;j++) {
-        //Se +
-        if (riferimento[j] == in[j]) {
-            out[j] = '+';
-            buf[in[j] - offset]--;
-        }
-    }
-    for(int j=0;j<lengthWord;j++)
-    {
-        if (riferimento[j] != in[j])
-        {
-            if(buf[in[j] -offset]>0)
-            {
-                out[j]='|';
-                buf[in[j] -offset]--;
-            }
-            else
-            {
-                out[j]='/';
-            }
-        }
-    }
-    out[lengthWord]='\0';
-    printf("%s\n",out);
-}
-void apprendiVinc(char* in, int* buf)
-{
-    int temp;
-    memset(cont, 0, sizeof(int) * caratteriBuf);
-
-    for(int j=0;j<lengthWord;j++)
-    {
-        cont[in[j]-offset]++;
-    }
-    for(int j=0;j<lengthWord;j++)
-    {
-        temp=in[j]-offset;
-        if(out[j]=='+')
-        {
-            //se la scopri adesso aggiorni il vincolo di almeno se era messo a true e l'esattamente
-            if(vincC[j]==35)
-            {
-                if(!esattamente[temp] && cont[temp] > almeno[temp])
-                {
-                    almeno[temp]+=1;
-                    if(almeno[temp] > buf[temp])
-                    {
-                        almeno[temp]-=1;
-                    }
-                }
-                vincC[j]=in[j];
-            }
-        }
-        else
-        {
-            if(out[j]=='|' && posSbagliata[j][temp] == false)
-            {
-                posSbagliata[j][temp]=true;
-                if(cont[temp]>almeno[temp])
-                {
-                    almeno[temp] += 1;
-                    if (almeno[temp] > buf[temp])
-                    {
-                        almeno[temp] -= 1;
-                    }
-                }
-            }
-        }
-    }
-
-
-    for(int j=0;j<lengthWord;j++)
-    {
-        if(out[j]=='/')
-        {
-            temp=in[j]-offset;
-            if(almeno[temp]>0)
-            {
-                esattamente[temp]=true;
-                almeno[temp]=buf[temp];
-            }
-            else
-            {
-                nonEsiste[temp]=true;
-            }
-            posSbagliata[j][temp]=true;
-        }
-
-    }
-    vincC[lengthWord]='\0';
-}
 
 void Confronto_Apprendi(const char* in)
 {
@@ -447,7 +326,8 @@ void Confronto_Apprendi(const char* in)
     memset(out, 'A', sizeof(char) * lengthWord);
     for(int j = 0; j < lengthWord; j++)
     {
-        temp=in[j] - offset;
+        //temp=in[j] - offset;
+        temp= calcoloLettera(in[j]);
         if (riferimento[j] == in[j])
         {
             out[j] = '+';
@@ -461,7 +341,8 @@ void Confronto_Apprendi(const char* in)
     {
         if(out[j] == 'A')
         {
-            temp=in[j] - offset;
+            //temp=in[j] - offset;
+            temp= calcoloLettera(in[j]);
             if(bufConfCopia[temp] > 0)
             {
                 bufConfCopia[temp]--;
@@ -488,13 +369,13 @@ void Confronto_Apprendi(const char* in)
 
     for(int j = 0; j < lengthWord; j++)
     {
-        temp=in[j] - offset;
+        //temp=in[j] - offset;
+        temp= calcoloLettera(in[j]);
         if(cont[temp] > almeno[temp])
         {
             almeno[temp] = cont[temp];
         }
     }
-
     out[lengthWord]='\0';
     puts(out);
 }
@@ -506,7 +387,8 @@ _Bool rispettaVincoli(const char* in)
 
     for(int j=0; j< lengthWord; j++)
     {
-        temp=in[j]-offset;
+        //temp=in[j] - offset;
+        temp= calcoloLettera(in[j]);
         cont[temp]+=1;
         if(nonEsiste[temp])
         {
@@ -527,7 +409,8 @@ _Bool rispettaVincoli(const char* in)
 
     for(int j=0;j<lengthWord;j++)
     {
-        ref = riferimento[j] - offset;
+        ref= calcoloLettera(riferimento[j]);
+        //ref = riferimento[j] - offset;
         //caso in cui ho c### e asdo (c non Ã¨ rispettato)
         if(cont[ref] < almeno[ref])
         {
@@ -548,7 +431,6 @@ void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
 {
     if(x!=NULL)
     {
-        //TODO da modificare
         if(rispettaVincoli(&x->parola[0]))
         {
             insertInTree(filtrate, x->parola);
@@ -557,17 +439,12 @@ void scorriAlberoGiusta(Node* x, dizionario* dizio, dizionario* filtrate)
         scorriAlberoGiusta(x->right, dizio, filtrate);
     }
 }
-void deleteTreeFinePartita(Node* x,dizionario* tree,bool delete)
+void deleteTreeFinePartita(Node* x,dizionario* tree)
 {
     if(x!=NULL)
     {
-        deleteTreeFinePartita(x->left, tree, delete);
-        deleteTreeFinePartita(x->right, tree, delete);
-        //TODO capire come mai non funziona correttamente la delete su parola
-        if(delete)
-        {
-            free(x->parola);
-        }
+        deleteTreeFinePartita(x->left, tree);
+        deleteTreeFinePartita(x->right, tree);
         free(x);
     }
 }
@@ -586,6 +463,104 @@ void scorriFiltrateDelete(Node* x, dizionario* tree)
     }
 }
 
+
+void Morris(dizionario *tree, dizionario* filtrate)
+{
+    Node *current, *pre, *root;
+    root=tree->root;
+    if (root == NULL)
+        return;
+
+    current = root;
+    while (current != NULL) {
+
+        if (current->left == NULL) {
+            if (rispettaVincoli(&current->parola[0]))
+            {
+                insertInTree(filtrate, &current->parola[0]);
+            }
+            current = current->right;
+        }
+        else {
+
+            /* Find the inorder predecessor of current */
+            pre = current->left;
+            while (pre->right != NULL
+                   && pre->right != current)
+                pre = pre->right;
+
+            /* Make current as the right child of its
+               inorder predecessor */
+            if (pre->right == NULL) {
+                pre->right = current;
+                current = current->left;
+            }
+
+                /* Revert the changes made in the 'if' part to
+                   restore the original tree i.e., fix the right
+                   child of predecessor */
+            else {
+                pre->right = NULL;
+                if (rispettaVincoli(&current->parola[0]))
+                {
+                    insertInTree(filtrate, &current->parola[0]);
+                }
+                current = current->right;
+            } /* End of if condition pre->right == NULL */
+        } /* End of if condition current->left == NULL*/
+    } /* End of while */
+}
+void MorrisPerScorriDelete(dizionario *tree)
+{
+    Node *current, *pre, *root;
+    root=tree->root;
+    if (root == NULL)
+        return;
+
+    current = root;
+    while (current != NULL) {
+
+        if (current->left == NULL) {
+            if (!rispettaVincoli(&current->parola[0]))
+            {
+                Node* daTogliere=delete(tree, current);
+                free(daTogliere);
+                tree->size--;
+            }
+            current = current->right;
+        }
+        else {
+
+            /* Find the inorder predecessor of current */
+            pre = current->left;
+            while (pre->right != NULL
+                   && pre->right != current)
+                pre = pre->right;
+
+            /* Make current as the right child of its
+               inorder predecessor */
+            if (pre->right == NULL) {
+                pre->right = current;
+                current = current->left;
+            }
+
+                /* Revert the changes made in the 'if' part to
+                   restore the original tree i.e., fix the right
+                   child of predecessor */
+            else {
+                pre->right = NULL;
+                if (!rispettaVincoli(&current->parola[0]))
+                {
+                    Node* daTogliere=delete(tree, current);
+                    free(daTogliere);
+                    tree->size--;
+                }
+                current = current->right;
+            } /* End of if condition pre->right == NULL */
+        } /* End of if condition current->left == NULL*/
+    } /* End of while */
+}
+
 void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* treeFiltered)
 {
     free(comandi);
@@ -594,7 +569,7 @@ void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* tre
     free(vincC);
     free(cont);
     free(almeno);
-    deleteTreeFinePartita(dizio->root,dizio, true);
+    deleteTreeFinePartita(dizio->root,dizio);
     free(treeFiltered);
     free(dizio);
     for(int i=0;i<lengthWord;i++)
@@ -607,9 +582,19 @@ void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* tre
     free(bufConf);
     free(bufConfCopia);
     free(out);
+
 }
 
+
 int main() {
+
+    //stuff per tempo
+    /*
+    clock_t start, end;
+    double execution_time;
+    start = clock();
+    */
+
     FILE *file;
     file = stdin;
     lengthWord = 0;
@@ -624,30 +609,28 @@ int main() {
         char first;
         char *tempInput = malloc(sizeof(char) * (lengthWord + 1));
         riferimento = malloc(sizeof(char) * (lengthWord + 1));
-        bool insertStartB = true;
+        _Bool insertStartB = 1;
         //firstInsert mi serve per capire se inserire direttamente nel tree oppure prima devo vedere se filtrarlo
-        bool firstInsert=true;
-        bool beforeEveryPartita=true;
-        bool nuovaPartitaB = false;
+        _Bool firstInsert=1;
+        _Bool beforeEveryPartita=1;
+        _Bool nuovaPartitaB = 0;
         int tentativi;
 
 
-        //per Confronto: bufConf conta i caratteri e li salva sul buffer, out salva l'output da mandare
-        //TODO implementazioni future:   bufCont implementato come lista (di char, occorenze, puntatore)
         bufConf= malloc(sizeof (int) * caratteriBuf);
         bufConfCopia= malloc(sizeof (int) * caratteriBuf);
         out= malloc(sizeof (char)*lengthWord+1);
 
         //Parte per apprendimento vincoli
-        vincC= malloc(sizeof (char) * (lengthWord + 5));
+        vincC= malloc(sizeof (char) * (lengthWord + 1));
         cont= malloc(sizeof (int)*caratteriBuf);
         almeno= malloc(sizeof (int) * caratteriBuf);
-        posSbagliata= malloc(sizeof (bool*) * lengthWord);
-        esattamente= malloc(sizeof (bool)*caratteriBuf);
-        nonEsiste= malloc(sizeof (bool)*caratteriBuf);
+        posSbagliata= malloc(sizeof (_Bool*) * lengthWord);
+        esattamente= malloc(sizeof (_Bool)*caratteriBuf);
+        nonEsiste= malloc(sizeof (_Bool)*caratteriBuf);
         for(int j=0; j < lengthWord; j++)
         {
-            posSbagliata[j]=(bool*) malloc(sizeof(bool) * caratteriBuf);
+            posSbagliata[j]=(_Bool*) malloc(sizeof(_Bool) * caratteriBuf);
         }
 
         //alberi
@@ -660,7 +643,6 @@ int main() {
         treeFiltered->root=NULL;
         treeFiltered->k=lengthWord;
         treeFiltered->size=0;
-
 
         do
         {
@@ -694,41 +676,37 @@ int main() {
                     {
                         if(strCmpMia(riferimento,tempInput)==0)
                         {
-                            printf("ok\n");
-                            nuovaPartitaB = false;
+                            puts("ok");
+                            nuovaPartitaB = 0;
                         }
                         else
                         {
                             tentativi-=1;
-                            //confronto(&tempInput[0], bufConfCopia);
-                            //apprendiVinc(&tempInput[0], bufConf);
                             Confronto_Apprendi(&tempInput[0]);
+
                             if (firstInsert) {
-                                //scorriAlbero(dizio->root, dizio, treeFiltered);
                                 scorriAlberoGiusta(dizio->root, dizio, treeFiltered);
-                                firstInsert = false;
+                                //Morris(dizio, treeFiltered);
+                                firstInsert = 0;
                             } else {
                                 scorriFiltrateDelete(treeFiltered->root, treeFiltered);
+                                //MorrisPerScorriDelete(treeFiltered);
                             }
 
                             printf("%d\n", treeFiltered->size);
                             if(tentativi==0)
                             {
-                                printf("ko\n");
-                                nuovaPartitaB = false;
+                                puts("ko");
+                                nuovaPartitaB = 0;
                             }
                             //restore buffer ConfCopia (al posto di copiarlo che mi prende O(caratteriBuff) uso questa che
-                            //è O(length)
-                            memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
-                            for(int j=0;j<lengthWord;j++)
-                            {
-                                bufConfCopia[riferimento[j] - offset ]+=1;
-                            }
+                            //Ã¨ O(length)
+                            memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                         }
                     }
                     else
                     {
-                        printf("not_exists\n");
+                        puts("not_exists");
                     }
                 }
             }
@@ -738,22 +716,22 @@ int main() {
                 { }
                 switch (comandi[0]) {
                     case newGame:
-                        if (nuovaPartitaB == false) {
+                        if (nuovaPartitaB == 0) {
                             if(fgets(riferimento, lengthWord +1, file))
                             { }
                             if(fscanf(file, "%d\n", &tentativi))
                             { }
                             comandi[0] = '\0';
-                            nuovaPartitaB = true;
-                            insertStartB = false;
-                            firstInsert = true;
+                            nuovaPartitaB = 1;
+                            insertStartB = 0;
+                            firstInsert = 1;
 
                             if(beforeEveryPartita)
-                            { beforeEveryPartita=false;
+                            { beforeEveryPartita=0;
                             }
                             else
                             {   //Eliminazione Tree Precedente
-                                deleteTreeFinePartita(treeFiltered->root,treeFiltered, false);
+                                deleteTreeFinePartita(treeFiltered->root,treeFiltered);
                             }
                             //Inizializzazione albero
                             treeFiltered->root=NULL;
@@ -761,22 +739,30 @@ int main() {
                             treeFiltered->size=0;
                             //Inizializzazione delle strutture per confronto e apprendimento vincoli
 
-                            memset(bufConf, 0, sizeof(int) * caratteriBuf);
-                            memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
+
                             memset(vincC, 35, sizeof(char) * lengthWord);
-                            memset(cont, 0, sizeof(int) * caratteriBuf);
+                            for(int i = 0; i < caratteriBuf; i++)
+                            {
+                                bufConf[i]=0;
+                                almeno[i]=0;
+                                esattamente[i]=0;
+                                nonEsiste[i]=0;
+                            }
+                            /*
+                            memset(bufConf, 0, sizeof(int) * caratteriBuf);
                             memset(almeno, 0, sizeof(int) * caratteriBuf);
                             memset(esattamente, 0, sizeof(bool) * caratteriBuf);
                             memset(nonEsiste, 0, sizeof(bool) * caratteriBuf);
-
+                            */
                             for(int j=0;j<lengthWord;j++)
                             {
-                                bufConf[riferimento[j] - offset ]+=1;
-                                bufConfCopia[riferimento[j] - offset]+=1;
+                                //bufConf[riferimento[j] - offset ]+=1;
+                                bufConf[calcoloLettera(riferimento[j])]+=1;
                             }
+                            memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                             for(int j=0; j < lengthWord; j++)
                             {
-                                memset(posSbagliata[j], false, sizeof(bool) * caratteriBuf );
+                                memset(posSbagliata[j], 0, sizeof(_Bool) * caratteriBuf );
                             }
                         }
                         else { printf("------Errore nuova partita in nuova partita\n"); }
@@ -786,12 +772,12 @@ int main() {
                             case startDic:
                                 if(fgets(comandi, 3, file))
                                 { }
-                                insertStartB = true;
+                                insertStartB = 1;
                                 break;
                             case endDic:
                                 if(fgets(comandi, 1, file))
                                 { }
-                                insertStartB = false;
+                                insertStartB = 0;
                                 break;
                         }
                         if(fgets(comandi, 2, file))
@@ -801,9 +787,9 @@ int main() {
                         //se faccio una stampa filtrate prima di apprendere constraint allora
                         //devo stampare il dizionario e non il tree
                         if(firstInsert)
-                            stampaRicInOrder(dizio->root);
+                            StampaRicInOrder(dizio->root);
                         else
-                            stampaRicInOrder(treeFiltered->root);
+                            StampaRicInOrder(treeFiltered->root);
                         if(fgets(comandi,3,file))
                         { }
                         break;
@@ -814,15 +800,22 @@ int main() {
             comandi[0] = '\0';
         } while (!feof(file));
 
-        bool debug=0;
+        _Bool debug=0;
         if(debug==0)
             liberaTutto(comandi,tempInput,dizio,treeFiltered);
         //TODO spostare il temp a prima
-    }else
+    }
+    else
     {
         printf("Errore di lettura");
     }
+
+
+    //stuff per tempo
+    /*
+    end = clock();
+    execution_time = ((double)(end - start))/CLOCKS_PER_SEC;
+    printf("%f\n", execution_time);
+*/
     return 0;
 }
-
-
