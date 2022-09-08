@@ -389,7 +389,6 @@ void Confronto_Apprendi(const char* in)
 }
 _Bool rispettaVincoli(const char* in)
 {
-
     memset(cont, 0, sizeof(int) * caratteriBuf);
 
     char c,v;
@@ -402,12 +401,11 @@ _Bool rispettaVincoli(const char* in)
         v=vincC[j];
         temp= calcoloLettera(c);
         cont[temp]+=1;
-        //
+
         if(nonEsiste[temp])
         {
             return 0;
         }
-            //
         else if(v!=35)
         {
             if(c!=v)
@@ -540,29 +538,16 @@ int main() {
         int tentativi;
 
 
-        int* block1 = malloc(2*caratteriBuf*sizeof (int*));/*
-        Node* newNode = (Node*) &block[0];
-        newNode->parola= &block[sizeof(Node)];
-*/
+        int* block1 = malloc(2*caratteriBuf*sizeof (int*));
         bufConf= block1;
         bufConfCopia= &block1[caratteriBuf];
 
         //Parte per apprendimento vincoli
-
         char* block2 = malloc(2*(lengthWord +1)*sizeof (char*));
-        /*
-        out= malloc(sizeof (char)*lengthWord+1);
-        vincC= malloc(sizeof (char) * (lengthWord + 1));
-        */
         out=block2;
         vincC= &block2[lengthWord+1];
 
         int* block3 = malloc(2*caratteriBuf*sizeof (int*));
-        /*
-        cont= malloc(sizeof (int)*caratteriBuf);
-        almeno= malloc(sizeof (int) * caratteriBuf);
-        esattamente= malloc(sizeof (_Bool)*caratteriBuf);
-        nonEsiste= malloc(sizeof (_Bool)*caratteriBuf);*/
         cont=block3;
         almeno=&block3[caratteriBuf];
 
@@ -587,10 +572,12 @@ int main() {
         treeFiltered->k=lengthWord;
         treeFiltered->size=0;
 
+
         char c;
         int pos;
         do
         {
+            memset(comandi,'\0',15);
             //LETTURA CARATTERI
             pos=0;
             do {
@@ -602,7 +589,7 @@ int main() {
                 }
             }while(c!='\n' && !feof(file));
 
-            comandi[pos]='\0';
+            //comandi[pos]='\0';
 
             //CASO DI PAROLE NON STD
             if (comandi[0] != '+')
@@ -658,6 +645,8 @@ int main() {
                             {
                                 puts("ko");
                                 nuovaPartita = 0;
+                                //se così funziona sarà da togliere l'assegnamento nella nuova partita
+                                firstInsert = 0;
                             }
                         }
                     }
@@ -734,6 +723,7 @@ int main() {
                 }
                 else
                 {
+                    //STAMPA FILTRATE
                     //se faccio una stampa filtrate prima di apprendere constraint allora
                     //devo stampare il dizionario e non il tree
                     if(!firstInsert)
