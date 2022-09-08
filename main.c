@@ -102,7 +102,7 @@ void RightRotate(dizionario * T,Node* x)
     x->father = y;
 
 }
-void rbInsertFIXUP2(dizionario* dizio, Node* nodo)
+void rbInsertFIXUP(dizionario* dizio, Node* nodo)
 {
     Node* grandparent = NULL;
     Node* parentpt = NULL;
@@ -199,7 +199,7 @@ void rbInsertion(dizionario* T, Node* nodo)
     nodo->right=NULL;
     T->size++;
 
-    rbInsertFIXUP2(T, nodo);
+    rbInsertFIXUP(T, nodo);
 }
 Node* insertInDict(dizionario* dizio, char* stringa)
 {
@@ -212,7 +212,7 @@ Node* insertInDict(dizionario* dizio, char* stringa)
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
-    newNode->color=NULL;
+    newNode->color=1;
 
     rbInsertion(dizio,newNode);
     return newNode;
@@ -224,7 +224,7 @@ void insertInTree(dizionario *tree, char *stringa)
     newNode->father=NULL;
     newNode->left=NULL;
     newNode->right=NULL;
-    newNode->color=NULL;
+    newNode->color=1;
 
     rbInsertion(tree, newNode);
 }
@@ -321,7 +321,7 @@ int calcoloLettera(char c)
 void Confronto_Apprendi(const char* in)
 {
     memset(cont, 0, sizeof(int) * caratteriBuf);
-    memset(out, 35, sizeof(char) * lengthWord);
+    memset(out, 'A', sizeof(char) * lengthWord);
 
     int temp;
     char c;
@@ -341,21 +341,22 @@ void Confronto_Apprendi(const char* in)
 
     for(int j=0; j < lengthWord; j++)
     {
-        if(out[j] == 35)
+        if(out[j] == 'A')
         {
             //temp=in[j] - offset;
             temp= calcoloLettera(in[j]);
             if(bufConfCopia[temp] > 0)
             {
-                out[j] = '|';
                 bufConfCopia[temp]--;
                 posSbagliata[j][temp]=1;
+                out[j] = '|';
                 cont[temp]+=1;
             }
             else
             {
                 out[j] = '/';
                 posSbagliata[j][temp]=1;
+
                 if(cont[temp] > 0)
                 {
                     esattamente[temp] = 1;
@@ -388,6 +389,7 @@ void Confronto_Apprendi(const char* in)
 }
 _Bool rispettaVincoli(const char* in)
 {
+
     memset(cont, 0, sizeof(int) * caratteriBuf);
 
     char c,v;
@@ -405,7 +407,7 @@ _Bool rispettaVincoli(const char* in)
         {
             return 0;
         }
-        //
+            //
         else if(v!=35)
         {
             if(c!=v)
@@ -626,18 +628,17 @@ int main() {
                         else
                         {
                             tentativi-=1;
-                            memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                             Confronto_Apprendi(comandi);
                             //posso anche farlo con length e copiare il bunfConf
+                            memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
 
-                            /*
                             int cT1;
                             for (int j = 0; j < lengthWord; j++)
                             {
                                 cT1 = calcoloLettera(riferimento[j]);
                                 if(bufConfCopia[cT1]!=0)
                                     bufConfCopia[cT1] =bufConf[cT1];
-                            }*/
+                            }
 
 
                             if (firstInsert) {
@@ -689,22 +690,22 @@ int main() {
                         //Inizializzazione delle strutture per confronto e apprendimento vincoli
 
 
-                        for (int i = 0; i < caratteriBuf; i++) {
-                            if(bufConf[i]!=0)
-                                bufConf[i] = 0;
-                            if(almeno[i]!=0)
-                                almeno[i] = 0;
-                            if(esattamente[i]!=0)
-                                esattamente[i] = 0;
-                            if(nonEsiste[i]!=0)
-                                nonEsiste[i] = 0;
+                        for (int i = 0; i < caratteriBuf; i++)
+                        {
+                            bufConf[i] = 0;
+                            bufConfCopia[i] = 0;
+                            almeno[i] = 0;
+                            esattamente[i] = 0;
+                            nonEsiste[i] = 0;
                         }
                         /*
                         memset(bufConf, 0, sizeof(int) * caratteriBuf);
-                        //memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
+                        memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
                         memset(almeno, 0, sizeof(int) * caratteriBuf);
                         memset(esattamente, 0, sizeof(_Bool) * caratteriBuf);
                         memset(nonEsiste, 0, sizeof(_Bool) * caratteriBuf);*/
+
+
                         //memset(vincC, 35, sizeof(char) * lengthWord);
 
                         int cT;
@@ -713,10 +714,11 @@ int main() {
                             cT = calcoloLettera(riferimento[j]);
                             //bufConf[riferimento[j] - offset ]+=1;
                             bufConf[cT] += 1;
+                            bufConfCopia[cT] += 1;
                             memset(posSbagliata[j], 0, sizeof(_Bool) * caratteriBuf);
-                            if(vincC[j]!=35)
-                                vincC[j]=35;
+                            vincC[j]=35;
                         }
+                        //memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
                     } else {
                         printf("------Errore nuova partita in nuova partita\n");
                     }
@@ -725,9 +727,9 @@ int main() {
                 {
                     //forse si può ulteriormente ottimizzare
                     char c1=comandi[11];
-                   if(c1=='i')
+                    if(c1=='i')
                         inserimentoParole = 1;
-                   else if(c1=='f')
+                    else if(c1=='f')
                         inserimentoParole = 0;
                 }
                 else
