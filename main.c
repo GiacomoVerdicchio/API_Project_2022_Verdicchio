@@ -1,10 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-//stuff per tempo
-#include <time.h>
-
 int caratteriBuf=64;
 
 struct nodo
@@ -50,7 +46,6 @@ int strCmpMia(const char* c, const char* p,dizionario* T)
             return 1;
         else if(c[j]<p[j])
             return -1;
-
     }
     return 0;
 }
@@ -133,7 +128,7 @@ void rbInsertFIXUP(dizionario* dizio, Node* nodo)
             {
                 RightRotate(dizio, grandparent);
                 _Bool t=parentpt->color;
-                parentpt->color =grandparent->color; // CASE 3, BLACK
+                parentpt->color =grandparent->color;
                 grandparent->color= t;
                 nodo=parentpt;
 
@@ -144,14 +139,14 @@ void rbInsertFIXUP(dizionario* dizio, Node* nodo)
             if (uncle!=NULL && uncle->color==1)
             {
                 grandparent->color = 1;
-                parentpt->color = 0; // CASE 4
+                parentpt->color = 0;
                 uncle->color=0;
                 nodo = grandparent;
             }
             else if (nodo == parentpt->left)
             {
                 RightRotate(dizio, parentpt);
-                nodo = parentpt; // CASE 5
+                nodo = parentpt;
                 parentpt=nodo->father;
             }
             else
@@ -164,7 +159,7 @@ void rbInsertFIXUP(dizionario* dizio, Node* nodo)
             }
         }
     }
-    dizio->root->color = 0;// BLACK
+    dizio->root->color = 0;
 }
 void rbInsertion(dizionario* T, Node* nodo)
 {
@@ -207,7 +202,10 @@ Node* insertInDict(dizionario* dizio, char* stringa)
     char* block = malloc(sizeof(Node)+ sizeof(char)* size + 1);
     Node* newNode = (Node*) &block[0];
     newNode->parola= &block[sizeof(Node)];
-    strcpy(newNode->parola,stringa);
+    for(int i = 0; i < size; i++)
+    {
+        newNode->parola[i] = stringa[i];
+    }
     newNode->parola[size]='\0';
     newNode->father=NULL;
     newNode->left=NULL;
@@ -302,7 +300,6 @@ void StampaRicInOrder(Node* node)
         StampaRicInOrder(node->right);
     }
 }
-
 int calcoloLettera(char c)
 {
     if(c==45)
@@ -327,7 +324,6 @@ void Confronto_Apprendi(const char* in)
     char c;
     for(int j = 0; j < lengthWord; j++)
     {
-        //temp=in[j] - offset;
         c=in[j];
         temp= calcoloLettera(c);
         if (riferimento[j] == c)
@@ -343,7 +339,6 @@ void Confronto_Apprendi(const char* in)
     {
         if(out[j] == 'A')
         {
-            //temp=in[j] - offset;
             temp= calcoloLettera(in[j]);
             if(bufConfCopia[temp] > 0)
             {
@@ -366,9 +361,6 @@ void Confronto_Apprendi(const char* in)
                 {
                     nonEsiste[temp]=1;
                 }
-                //
-                //esattamente[temp] = 1;
-                //almeno[temp] = bufConf[temp];
             }
         }
     }
@@ -376,7 +368,6 @@ void Confronto_Apprendi(const char* in)
     int co;
     for(int j = 0; j < lengthWord; j++)
     {
-        //temp=in[j] - offset;
         temp= calcoloLettera(in[j]);
         co=cont[temp];
         if(co > almeno[temp])
@@ -389,6 +380,7 @@ void Confronto_Apprendi(const char* in)
 }
 _Bool rispettaVincoli(const char* in)
 {
+
     memset(cont, 0, sizeof(int) * caratteriBuf);
 
     char c,v;
@@ -396,7 +388,6 @@ _Bool rispettaVincoli(const char* in)
 
     for(int j=0; j< lengthWord; j++)
     {
-        //temp=in[j] - offset;
         c=in[j];
         v=vincC[j];
         temp= calcoloLettera(c);
@@ -424,30 +415,19 @@ _Bool rispettaVincoli(const char* in)
         ref= calcoloLettera(riferimento[j]);
         co=cont[ref];
         a=almeno[ref];
-        //ref = riferimento[j] - offset;
-        //caso in cui ho c### e asdo (c non Ã¨ rispettato)
+
         if(co < a)
         {
             return 0;
         }
         else
         {
-
             if(co > a && esattamente[ref])
-            {
                 return 0;
-            }
-            /*
-            if(esattamente[ref])
-            {
-                if((a==0 && co>a) || co>a)
-                    return 0;
-            }*/
         }
     }
     return 1;
 }
-
 void scorriAlberoGiusta(Node* x,dizionario* filtrate)
 {
     if(x!=NULL)
@@ -483,8 +463,6 @@ void scorriFiltrateDelete(Node* x, dizionario* tree)
         }
     }
 }
-
-
 void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* treeFiltered)
 {
     free(comandi);
@@ -506,15 +484,7 @@ void liberaTutto(char *comandi,char* tempInput,dizionario* dizio,dizionario* tre
 
 }
 
-
 int main() {
-
-    //stuff per tempo
-/*
-    clock_t start, end;
-    double execution_time;
-    start = clock();
-*/
 
     FILE *file;
     file = stdin;
@@ -533,7 +503,6 @@ int main() {
         _Bool inserimentoParole = 1;
         //firstInsert mi serve per capire se inserire direttamente nel tree oppure prima devo vedere se filtrarlo
         _Bool firstInsert=1;
-        //_Bool beforeEveryPartita=1;
         _Bool nuovaPartita = 0;
         int tentativi;
 
@@ -543,11 +512,13 @@ int main() {
         bufConfCopia= &block1[caratteriBuf];
 
         //Parte per apprendimento vincoli
+
         char* block2 = malloc(2*(lengthWord +1)*sizeof (char*));
         out=block2;
         vincC= &block2[lengthWord+1];
 
         int* block3 = malloc(2*caratteriBuf*sizeof (int*));
+
         cont=block3;
         almeno=&block3[caratteriBuf];
 
@@ -573,7 +544,7 @@ int main() {
         treeFiltered->size=0;
 
 
-        char c;
+        char c = '\0';
         int pos;
         do
         {
@@ -589,8 +560,6 @@ int main() {
                 }
             }while(c!='\n' && !feof(file));
 
-            //comandi[pos]='\0';
-
             //CASO DI PAROLE NON STD
             if (comandi[0] != '+')
             {
@@ -598,10 +567,14 @@ int main() {
                 if (inserimentoParole)
                 {
                     Node* newNode = insertInDict(dizio,comandi);
-                    if(nuovaPartita && rispettaVincoli(comandi))
+                    if(treeFiltered->size > 0)
                     {
-                        insertInTree(treeFiltered, newNode->parola);
+                        if(nuovaPartita && rispettaVincoli(comandi))
+                        {
+                            insertInTree(treeFiltered, newNode->parola);
+                        }
                     }
+
                 }
                 else if (nuovaPartita)
                 {
@@ -631,13 +604,11 @@ int main() {
                             if (firstInsert) {
                                 //scorro il dizionario e copio le parole da dizio a tree
                                 scorriAlberoGiusta(dizio->root,  treeFiltered);
-                                //Morris(dizio, treeFiltered);
                                 firstInsert = 0;
                             } else
                             {
                                 //tolgo le parole che non rispettano i vincoli
                                 scorriFiltrateDelete(treeFiltered->root, treeFiltered);
-                                //MorrisPerScorriDelete(treeFiltered);
                             }
                             printf("%d\n", treeFiltered->size);
 
@@ -645,8 +616,6 @@ int main() {
                             {
                                 puts("ko");
                                 nuovaPartita = 0;
-                                //se così funziona sarà da togliere l'assegnamento nella nuova partita
-                                firstInsert = 0;
                             }
                         }
                     }
@@ -666,7 +635,6 @@ int main() {
                     {
                         if (fgets(riferimento, lengthWord + 1, file)) {}
                         if (fscanf(file, "%d\n", &tentativi)) {}
-                        //comandi[0] = '\0';
                         nuovaPartita = 1;
                         inserimentoParole = 0;
                         firstInsert = 1;
@@ -687,45 +655,27 @@ int main() {
                             esattamente[i] = 0;
                             nonEsiste[i] = 0;
                         }
-                        /*
-                        memset(bufConf, 0, sizeof(int) * caratteriBuf);
-                        memset(bufConfCopia, 0, sizeof(int) * caratteriBuf);
-                        memset(almeno, 0, sizeof(int) * caratteriBuf);
-                        memset(esattamente, 0, sizeof(_Bool) * caratteriBuf);
-                        memset(nonEsiste, 0, sizeof(_Bool) * caratteriBuf);*/
-
-
-                        //memset(vincC, 35, sizeof(char) * lengthWord);
 
                         int cT;
                         for (int j = 0; j < lengthWord; j++)
                         {
                             cT = calcoloLettera(riferimento[j]);
-                            //bufConf[riferimento[j] - offset ]+=1;
                             bufConf[cT] += 1;
                             bufConfCopia[cT] += 1;
                             memset(posSbagliata[j], 0, sizeof(_Bool) * caratteriBuf);
                             vincC[j]=35;
                         }
-                        //memcpy(bufConfCopia, bufConf, sizeof(int) * caratteriBuf);
+
                     } else {
                         printf("------Errore nuova partita in nuova partita\n");
                     }
                 }
                 else if(com=='i')
                 {
-                    //forse si può ulteriormente ottimizzare
-                    char c1=comandi[11];
-                    if(c1=='i')
-                        inserimentoParole = 1;
-                    else if(c1=='f')
-                        inserimentoParole = 0;
+                    inserimentoParole = !inserimentoParole;
                 }
                 else
                 {
-                    //STAMPA FILTRATE
-                    //se faccio una stampa filtrate prima di apprendere constraint allora
-                    //devo stampare il dizionario e non il tree
                     if(!firstInsert)
                         StampaRicInOrder(treeFiltered->root);
                     else
@@ -743,12 +693,5 @@ int main() {
         printf("Errore di lettura");
     }
 
-
-    //stuff per tempo
-/*
-    end = clock();
-    execution_time = ((double)(end - start))/CLOCKS_PER_SEC;
-    printf("%f\n", execution_time);
-*/
     return 0;
 }
